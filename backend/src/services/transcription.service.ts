@@ -1,4 +1,5 @@
 import type { Transcription, TranscriptionInput } from '../interfaces/transcription.interface.js';
+import { transcribeAudio } from './openai.js';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const ffmpeg = require('fluent-ffmpeg');
@@ -14,36 +15,37 @@ if (ffmpegStatic) {
     throw new Error("FFmpeg binary path could not be resolved.");
 }
 
-export const createTranscriptionService = async (data: TranscriptionInput): Promise<Transcription[]> => {
+export const createTranscriptionService = async (data: TranscriptionInput): Promise<any> => {
     await convertToAudio(data.url, outputFileName);
-    return [];
+    const transcription = await transcribeAudio(outputFileName);
+    return transcription;
 };
 
 
 
-const convertToAudio = async (videoUrl: string, outputFileName: string) => {
-    // const audioStream = new PassThrough();
-    const command = ffmpeg(videoUrl)
-        .noVideo()
-        .audioCodec('libmp3lame')
-        .audioBitrate(64)
-        .format('mp3')
-        .on('start', (commandLine: string) => {
-            console.log(`Spawned FFmpeg with command: ${commandLine}`);
-        })
-        .on('progress', (progress) => {
-            console.log(`Processing: ${progress.percent}% done`);
-        })
-        .on('error', (err: Error) => {
-            console.error(`An error occurred: ${err.message}`);
-        })
-        .on('end', () => {
-            console.log('Finished conversion!');
-        });
+const convertToAudio = (videoUrl: string, outputFileName: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        const command = ffmpeg(videoUrl)
+            .noVideo()
+            .audioCodec('libmp3lame')
+            .audioBitrate(64)
+            .format('mp3')
+            .on('start', (commandLine: string) => {
+                console.log(`Spawned FFmpeg with command: ${commandLine}`);
+            })
+            .on('progress', (progress: any) => {
+                const percent = progress.percent ? `${progress.percent.toFixed(2)}%` : 'unknown';
+                console.log(`Processing: ${percent} done`);
+            })
+            .on('error', (err: Error) => {
+                console.error(`An error occurred: ${err.message}`);
+                reject(err);
+            })
+            .on('end', () => {
+                console.log('Finished conversion!');
+                resolve();
+            });
 
-    // Option A: Save to a local file
-    command.save(outputFileName);
-
-    // Option B: Pipe to a stream (Better for sending to an API)
-    // command.pipe(audioStream);
+        command.save(outputFileName);
+    });
 }
