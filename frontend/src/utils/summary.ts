@@ -1,6 +1,6 @@
 import { Caption } from "@/components/InitialScreen";
 
-const BACKEND_URL = 'http://localhost:3000'
+const BACKEND_URL = 'http://3.27.193.101'
 
 export interface Summary {
     id: string
