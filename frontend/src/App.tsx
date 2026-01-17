@@ -134,7 +134,7 @@ function App() {
 
                 {screen === 'loading' && (
                     <LoadingScreen
-                        isExtractingAudio={!hasCaptions || processMode === 'transcription'}
+                        isExtractingAudio={!hasCaptions}
                         processMode={processMode}
                         onSummaryGenerated={handleSummaryGenerated}
                         onTranscriptionGenerated={handleTranscriptionGenerated}

@@ -29,6 +29,39 @@ export function LoadingScreen({ isExtractingAudio, processMode, onSummaryGenerat
             return;
         }
 
+        // Helper function to convert Caption[] to TranscriptionSegment[]
+        const convertCaptionsToSegments = (caps: Caption[]): TranscriptionSegment[] => {
+            return caps.map((cap, index, arr) => {
+                // Parse time string (format: "HH:MM:SS" or "MM:SS" or seconds)
+                const parseTime = (timeStr: string): number => {
+                    // If it's already a number in string form
+                    if (!isNaN(Number(timeStr))) {
+                        return Number(timeStr);
+                    }
+                    // Parse HH:MM:SS or MM:SS format
+                    const parts = timeStr.split(':').map(Number);
+                    if (parts.length === 3) {
+                        return parts[0] * 3600 + parts[1] * 60 + parts[2];
+                    } else if (parts.length === 2) {
+                        return parts[0] * 60 + parts[1];
+                    }
+                    return 0;
+                };
+
+                const start = parseTime(cap.time);
+                // End time is the start of the next caption, or start + 5 for the last one
+                const end = index < arr.length - 1
+                    ? parseTime(arr[index + 1].time)
+                    : start + 5;
+
+                return {
+                    start,
+                    end,
+                    text: cap.caption
+                };
+            });
+        };
+
         // 2. Setup AbortController and Timeout
         const controller = new AbortController();
         const timeoutId = setTimeout(() => {
@@ -37,19 +70,61 @@ export function LoadingScreen({ isExtractingAudio, processMode, onSummaryGenerat
 
         const processLecture = async () => {
             try {
-                if (processMode === 'summary') {
-                    const resultingSummaries = await generateSummary(captions, streamUrl, {
-                        signal: controller.signal
-                    });
-                    clearTimeout(timeoutId);
-                    onSummaryGenerated(resultingSummaries);
-                } else {
-                    const resultingSegments = await transcribeVideo(streamUrl, duration, {
-                        signal: controller.signal
-                    });
-                    clearTimeout(timeoutId);
+                let summaries;
+                let transcriptionSegments;
 
-                    onTranscriptionGenerated(resultingSegments);
+                if (processMode === 'summary') {
+                    // Generate summary (backend may auto-transcribe if no captions)
+                    summaries = await generateSummary(captions, streamUrl, duration, {
+                        signal: controller.signal
+                    });
+
+                    // Also populate transcription tab from captions
+                    if (captions && captions.length > 0) {
+                        transcriptionSegments = convertCaptionsToSegments(captions);
+                    }
+                    // Note: If no captions, backend already transcribed, but we don't have segments here
+                    // In this case, transcription tab will be empty - user can click transcribe if needed
+
+                } else {
+                    // TRANSCRIPTION MODE
+                    if (captions && captions.length > 0) {
+                        // Use existing captions for both tabs
+                        console.log('📝 Using existing captions for both tabs');
+                        transcriptionSegments = convertCaptionsToSegments(captions);
+
+                        // Also generate summary from captions
+                        summaries = await generateSummary(captions, streamUrl, duration, {
+                            signal: controller.signal
+                        });
+                    } else {
+                        // No captions - transcribe and then summarize
+                        console.log('🎤 No captions found, extracting audio...');
+                        transcriptionSegments = await transcribeVideo(streamUrl, duration, {
+                            signal: controller.signal
+                        });
+
+                        // Also generate summary from transcription
+                        // Convert segments back to caption format for summary API
+                        console.log('📊 Generating summary from transcription...');
+                        const captionsFromTranscription = transcriptionSegments.map(seg => ({
+                            caption: seg.text,
+                            time: String(seg.start)
+                        }));
+                        summaries = await generateSummary(captionsFromTranscription, streamUrl, duration, {
+                            signal: controller.signal
+                        });
+                    }
+                }
+
+                clearTimeout(timeoutId);
+
+                // Populate both tabs
+                if (summaries) {
+                    onSummaryGenerated(summaries);
+                }
+                if (transcriptionSegments) {
+                    onTranscriptionGenerated(transcriptionSegments);
                 }
 
             } catch (err: any) {
