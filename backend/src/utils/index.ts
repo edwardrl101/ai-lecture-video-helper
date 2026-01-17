@@ -21,17 +21,45 @@ app.use('/api/transcribe', transcriptionRoutes);
 
 app.post('/generate-summary', async (req: Request, res: Response) => {
     try {
-        console.log("Called")
-        const { captions } = req.body;
+        console.log("Called /generate-summary");
+        const { captions, streamUrl, duration } = req.body;
 
+        let captionsToUse = captions;
+
+        // Check if we have captions to work with
         if (!captions || !Array.isArray(captions) || captions.length === 0) {
-            res.status(400).json({ error: 'Captions array is required' });
-            return;
+            // No captions - check if we can auto-transcribe
+            if (streamUrl && duration) {
+                console.log(`📝 No captions provided. Auto-transcribing from stream...`);
+                console.log(`   URL: ${streamUrl.substring(0, 50)}...`);
+                console.log(`   Duration: ${duration}s`);
+
+                // Import and call transcription service
+                const { createTranscriptionService } = await import('../services/transcription.service.js');
+                const transcriptionSegments = await createTranscriptionService({
+                    url: streamUrl,
+                    duration: duration
+                });
+
+                console.log(`✅ Transcription complete: ${transcriptionSegments.length} segments`);
+
+                // Convert transcription segments to caption format
+                captionsToUse = transcriptionSegments.map((segment: any) => ({
+                    text: segment.text,
+                    start: segment.start,
+                    end: segment.end
+                }));
+            } else {
+                res.status(400).json({
+                    error: 'Either captions array or streamUrl + duration are required'
+                });
+                return;
+            }
         }
 
-        console.log(`Received ${captions.length} captions, generating summary...`);
+        console.log(`Generating summary from ${captionsToUse.length} captions...`);
 
-        const summaries = await generateLectureSummary(captions);
+        const summaries = await generateLectureSummary(captionsToUse);
 
         console.log(`Generated ${summaries.length} topic summaries`);
         res.json(summaries);
