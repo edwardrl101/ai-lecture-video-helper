@@ -3,6 +3,8 @@ import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const ffmpeg = require('fluent-ffmpeg');
 import ffmpegStatic from 'ffmpeg-static';
+import ffprobeStatic from 'ffprobe-static';
+
 // import { PassThrough } from 'stream';
 const videoUrl: string = 'https://s-cloudfront.cdn.ap.panopto.com/sessions/c2405e48-0c2e-469e-a67f-b3ca00db4a0e/e14faa86-2c3f-4dff-953a-b3ca00db4a18-b5830cf8-3068-4665-89c2-b3d0006027d9.hls/310791/fragmented.mp4';
 const outputFileName: string = 'output.opus';
@@ -16,6 +18,12 @@ if (ffmpegStatic) {
     throw new Error("FFmpeg binary path could not be resolved.");
 }
 
+if (ffprobeStatic) {
+    ffmpeg.setFfprobePath(ffprobeStatic.path);
+} else {
+    throw new Error("FFprobe binary path could not be resolved.");
+}
+
 export const createTranscriptionService = async (data: TranscriptionInput): Promise<Transcription[]> => {
     await convertToAudio(videoUrl, outputFileName);
     return [];
@@ -24,16 +32,15 @@ export const createTranscriptionService = async (data: TranscriptionInput): Prom
 
 
 const convertToAudio = async (videoUrl: string, outputFileName: string) => {
-    let totalDuration;
-    ffmpeg(videoUrl).ffprobe((err, metadata) => {
-        if (err) {
-            console.error("Error probing video:", err);
-            return;
-        }
-        totalDuration = metadata.format.duration;
-        console.log(`Video duration: ${totalDuration} seconds`);
+    const metadata: any = await new Promise((resolve, reject) => {
+        ffmpeg(videoUrl).ffprobe((err, data) => {
+            if (err) reject(err);
+            else resolve(data);
+        });
     });
 
+    const totalDuration = metadata.format.duration;
+    console.log(`Video duration: ${totalDuration} seconds`);
     await processInParallel(totalDuration, 900);
 }
 
