@@ -107,10 +107,10 @@ export function LoadingScreen({ isExtractingAudio, processMode, onSummaryGenerat
                         // Also generate summary from transcription
                         // Convert segments back to caption format for summary API
                         console.log('📊 Generating summary from transcription...');
-                        const captionsFromTranscription = transcriptionSegments.map(seg => ({
-                            caption: seg.text,
-                            time: String(seg.start)
-                        }));
+                        // const captionsFromTranscription = transcriptionSegments.map(seg => ({
+                        //     caption: seg.text,
+                        //     time: String(seg.start)
+                        // }));
                         // summaries = await generateSummary(captionsFromTranscription, streamUrl, duration, {
                         //     signal: controller.signal
                         // });
