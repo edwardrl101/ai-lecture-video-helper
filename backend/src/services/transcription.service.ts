@@ -8,7 +8,7 @@ import ffprobeStatic from 'ffprobe-static';
 
 // import { PassThrough } from 'stream';
 // Output file used for temporary audio storage
-const TEMP_OUTPUT_FILE = 'output.opus';
+const TEMP_OUTPUT_FILE = 'output.mp3';
 const TEMP_DIR = './temp_dir';
 
 // Check if the path exists and tell fluent-ffmpeg where it is
@@ -23,8 +23,10 @@ if (ffprobeStatic) {
     throw new Error("FFprobe binary path could not be resolved.");
 }
 
-export const createTranscriptionService = async (data: TranscriptionInput): Promise<any[]> => {
+export const createTranscriptionService = async (data: TranscriptionInput): Promise<any> => {
     await convertToAudio(data.url, TEMP_OUTPUT_FILE);
+    // const transcription = await transcribeAudio(TEMP);
+    // return transcription;
     return [];
 };
 const convertToAudio = async (videoUrl: string, outputFileName: string) => {
