@@ -18,6 +18,7 @@ interface Summary {
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 const SYSTEM_PROMPT = `You are an expert academic assistant specializing in lecture indexing. 
 Your task is to transform a lecture transcript into a highly navigable, hierarchical JSON summary.
+Make sure to summarize the full lecture until the end.
 
 ### INSTRUCTIONS:
 1. IDENTIFY main topics and their specific sub-points, maximum 3-6 per topic.
@@ -51,7 +52,13 @@ export async function generateLectureSummary(captions: Caption[]): Promise<Summa
 
     // Use v1beta for advanced features like responseMimeType
     const model = genAI.getGenerativeModel(
-        { model: "gemini-2.5-flash" },
+        {
+            model: "gemini-2.5-flash",
+            generationConfig: {
+                maxOutputTokens: 8192, // Increase this significantly
+                temperature: 0.1,      // Keep low for consistent JSON
+            }
+        },
         { apiVersion: "v1beta" }
     );
 
