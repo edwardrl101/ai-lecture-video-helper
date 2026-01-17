@@ -56,7 +56,7 @@ export function DetailsScreen({ topic, onBack }: DetailsScreenProps) {
                             <div
                                 key={i}
                                 className="flex items-center gap-4 p-4 bg-card border border-border rounded-2xl hover:border-primary/30 hover:bg-accent/20 transition-all cursor-pointer group"
-                                onClick={() => seekVideo(parseTimestamp(topic.timestamp))}
+                                onClick={() => seekVideo(parseTimestamp(detail.timestamp))}
                             >
                                 <div className="flex flex-col items-center shrink-0">
                                     <div className="w-1.5 h-1.5 bg-primary rounded-full group-hover:scale-150 transition-transform"></div>
@@ -67,18 +67,19 @@ export function DetailsScreen({ topic, onBack }: DetailsScreenProps) {
                                         className="text-[10px] font-bold font-mono text-primary/60 hover:text-primary transition-colors inline-block"
                                         title="Seek to start"
                                     >
-                                        {formatTime(parseTimestamp(topic.timestamp))} (pt. {i + 1})
+                                        {formatTime(parseTimestamp(detail.timestamp))}
                                     </div>
-                                    <p className="text-sm font-semibold group-hover:text-foreground transition-colors">{detail}</p>
+                                    <p className="text-sm font-semibold group-hover:text-foreground transition-colors">{detail.point}</p>
                                 </div>
                                 <button
                                     className="p-1.5 opacity-0 group-hover:opacity-100 bg-background border border-border rounded-lg text-muted-foreground hover:text-primary transition-all active:scale-90"
                                     onClick={(e) => {
                                         e.stopPropagation()
-                                        console.log('AI Explanation for', detail)
+                                        console.log('AI Explanation for', detail.point)
                                     }}
                                     title="AI Explanation"
                                 >
+
                                     <Sparkles className="w-3.5 h-3.5" />
                                 </button>
                             </div>

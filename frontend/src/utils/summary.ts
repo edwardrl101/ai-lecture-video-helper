@@ -7,7 +7,7 @@ export interface Summary {
     title: string
     timestamp: string
     summary: string
-    details: string[]
+    details: { point: string; timestamp: string }[]
 }
 
 
@@ -18,10 +18,10 @@ const MOCK_SUMMARIES: Summary[] = [
         timestamp: '02:45',
         summary: 'A deep dive into the virtual DOM and reconciliation process. Explains why React is efficient for UI rendering.',
         details: [
-            'Understanding the Virtual DOM vs Real DOM',
-            'The Diffing Algorithm explained',
-            'How Fiber improves rendering performance',
-            'Reconciliation lifecycle overview'
+            { point: 'Understanding the Virtual DOM vs Real DOM', timestamp: '02:50' },
+            { point: 'The Diffing Algorithm explained', timestamp: '03:15' },
+            { point: 'How Fiber improves rendering performance', timestamp: '04:00' },
+            { point: 'Reconciliation lifecycle overview', timestamp: '04:30' }
         ]
     },
     {
@@ -30,10 +30,10 @@ const MOCK_SUMMARIES: Summary[] = [
         timestamp: '15:20',
         summary: 'Comparing local state, Context API, and external libraries like Redux or Zustand for global state.',
         details: [
-            'When to use useState vs useReducer',
-            'Avoiding prop drilling with Context',
-            'Lifting state up best practices',
-            'Performance considerations for large state'
+            { point: 'When to use useState vs useReducer', timestamp: '15:30' },
+            { point: 'Avoiding prop drilling with Context', timestamp: '16:10' },
+            { point: 'Lifting state up best practices', timestamp: '17:00' },
+            { point: 'Performance considerations for large state', timestamp: '18:20' }
         ]
     }
 ]

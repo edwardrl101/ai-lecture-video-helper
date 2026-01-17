@@ -12,27 +12,34 @@ interface Summary {
     title: string;
     timestamp: string;
     summary: string;
-    details: string[];
+    details: { point: string; timestamp: string }[];
 }
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-const SYSTEM_PROMPT = `You are an expert lecture summarizer. Given lecture captions/transcript, identify the key topics discussed and create structured summaries.
+const SYSTEM_PROMPT = `You are an expert academic assistant specializing in lecture indexing. 
+Your task is to transform a lecture transcript into a highly navigable, hierarchical JSON summary.
 
-For each major topic, provide:
-- A clear, concise title
-- An approximate timestamp (based on position in transcript)
-- A 1-2 sentence summary
-- 3-5 key bullet points
+### INSTRUCTIONS:
+1. IDENTIFY main topics and their specific sub-points, maximum 3-6 per topic.
+2. TIMESTAMPS: 
+   - Every Main Topic must have a 'timestamp'.
+   - Every Detail bullet point MUST have its own specific 'timestamp' indicating exactly when that sub-topic begins.
+3. STRUCTURE: Use a nested JSON format. Titles should be professional (e.g., "Introduction to SQL Constraints" instead of "SQL stuff").
+4. SUMMARIES: Keep the top-level 'summary' to 1-2 insightful sentences.
+5. ACCURACY: Ensure timestamps are chronologically increasing and exist within the transcript.
 
-Respond ONLY with valid JSON in this exact format:
+### OUTPUT FORMAT:
+Respond ONLY with a JSON object following this strict schema:
 {
   "summaries": [
     {
-      "id": "1",
-      "title": "Topic Title",
+      "id": 1,
+      "title": "string",
       "timestamp": "MM:SS",
-      "summary": "Brief summary of this topic.",
-      "details": ["Key point 1", "Key point 2", "Key point 3"]
+      "summary": "string",
+      "details": [
+        { "point": "string", "timestamp": "MM:SS" }
+      ]
     }
   ]
 }`;
