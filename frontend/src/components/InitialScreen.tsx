@@ -1,5 +1,4 @@
-import { MessageSquare, AlertCircle, Sparkles } from 'lucide-react'
-import { getCaptions } from '@/utils/captions'
+import { MessageSquare, AlertCircle, Sparkles, AudioLines } from 'lucide-react'
 
 export interface Caption {
     time: string
@@ -9,9 +8,11 @@ export interface Caption {
 interface InitialScreenProps {
     hasCaptions: boolean
     onStartSummary: () => void
+    onStartTranscription: () => void
 }
 
-export function InitialScreen({ onStartSummary, hasCaptions }: InitialScreenProps) {
+
+export function InitialScreen({ onStartSummary, onStartTranscription, hasCaptions }: InitialScreenProps) {
 
     return (
         <div className="flex-1 flex flex-col items-center justify-center space-y-8 animate-in fade-in zoom-in duration-500">
@@ -45,12 +46,13 @@ export function InitialScreen({ onStartSummary, hasCaptions }: InitialScreenProp
                 Generate AI Summary
             </button>
             <button
-                onClick={getCaptions}
-                className="group relative inline-flex items-center justify-center px-8 py-3 font-semibold text-primary-foreground transition-all duration-200 bg-primary rounded-xl hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary shadow-lg shadow-primary/20"
+                onClick={onStartTranscription}
+                className="group relative inline-flex items-center justify-center px-8 py-3 font-semibold text-primary transition-all duration-200 bg-secondary rounded-xl hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary shadow-lg"
             >
-                <Sparkles className="w-5 h-5 mr-2 animate-pulse" />
-                get captions
+                <AudioLines className="w-5 h-5 mr-2" />
+                Transcribe Video
             </button>
+
 
             {!hasCaptions && (
                 <div className="flex items-center gap-2 px-4 py-2 bg-muted/50 rounded-lg border border-border/50">
