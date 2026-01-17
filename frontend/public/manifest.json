@@ -1,0 +1,34 @@
+{
+    "manifest_version": 3,
+    "name": "Lecture Video Helper",
+    "description": "This extension aims to summarise lecture videos for easier understanding and quicker review.",
+    "version": "1.0.0",
+    "icons": {
+        "16": "icon.png",
+        "48": "icon.png",
+        "128": "icon.png"
+    },
+    "action": {
+        "default_popup": "index.html"
+    },
+    "permissions": [
+        "scripting",
+        "activeTab",
+        "cookies",
+        "storage"
+    ],
+    "host_permissions": [
+        "https://mediaweb.ap.panopto.com/*"
+    ],
+    "content_scripts": [
+        {
+            "matches": [
+                "*://*.panopto.com/*"
+            ],
+            "js": [
+                "content.js"
+            ],
+            "all_frames": false
+        }
+    ]
+}
