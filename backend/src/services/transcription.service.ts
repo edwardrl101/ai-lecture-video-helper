@@ -31,7 +31,7 @@ export const createTranscriptionService = async (data: TranscriptionInput): Prom
 };
 const convertToAudio = async (videoUrl: string, outputFileName: string) => {
     const metadata: any = await new Promise((resolve, reject) => {
-        ffmpeg(videoUrl).ffprobe((err, data) => {
+        ffmpeg(videoUrl).ffprobe((err: any, data: any) => {
             if (err) reject(err);
             else resolve(data);
         });
@@ -43,7 +43,7 @@ const convertToAudio = async (videoUrl: string, outputFileName: string) => {
 }
 
 
-async function processInParallel(totalDuration, segmentDuration) {
+async function processInParallel(totalDuration: number, segmentDuration: number) {
     const tasks = [];
 
     // Step 1: Create separate conversion tasks for each segment
