@@ -33,7 +33,7 @@ export function LoadingScreen({ isExtractingAudio, processMode, onSummaryGenerat
         const controller = new AbortController();
         const timeoutId = setTimeout(() => {
             controller.abort(); // This triggers the catch block
-        }, 300000);
+        }, 600000);
 
         const processLecture = async () => {
             try {
@@ -54,7 +54,7 @@ export function LoadingScreen({ isExtractingAudio, processMode, onSummaryGenerat
 
             } catch (err: any) {
                 if (err.name === 'AbortError') {
-                    console.error("Request timed out after 300 seconds");
+                    console.error("Request timed out after 600 seconds");
                 } else {
                     console.error("Process failed", err);
                 }
