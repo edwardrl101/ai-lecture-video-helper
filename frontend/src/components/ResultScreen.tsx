@@ -4,6 +4,8 @@ import { Summary } from '@/utils/summary'
 
 
 import { TranscriptionSegment } from '@/utils/transcription'
+import { seekVideo, parseTimestamp, formatTime } from '@/utils/video'
+
 
 interface ResultScreenProps {
     summaries: Summary[]
@@ -17,33 +19,6 @@ interface ResultScreenProps {
 export function ResultScreen({ summaries, transcriptions, initialMode, onSelectTopic }: ResultScreenProps) {
     const [viewMode, setViewMode] = useState<'summary' | 'transcription'>(initialMode)
 
-    const formatTime = (seconds: number) => {
-        const mins = Math.floor(seconds / 60)
-        const secs = Math.floor(seconds % 60)
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-    }
-
-    const seekVideo = (seconds: number) => {
-        console.log(`🎬 Seeking video to ${seconds}s`);
-        // @ts-ignore
-        if (typeof chrome !== 'undefined' && chrome.tabs) {
-            // @ts-ignore
-            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-                if (tabs[0]?.id) {
-                    // @ts-ignore
-                    chrome.tabs.sendMessage(tabs[0].id, {
-                        action: "SEEK_VIDEO",
-                        time: seconds
-                    });
-                }
-            });
-        }
-    }
-
-    const parseTimestamp = (timestamp: string) => {
-        const [mins, secs] = timestamp.split(':').map(Number)
-        return (mins || 0) * 60 + (secs || 0)
-    }
 
 
     return (
@@ -86,7 +61,9 @@ export function ResultScreen({ summaries, transcriptions, initialMode, onSelectT
                                             title="Click to seek"
                                         >
                                             <Clock className="w-3 h-3" />
-                                            <span className="text-[10px] font-bold font-mono uppercase tracking-wider">{summary.timestamp}</span>
+                                            <span className="text-[10px] font-bold font-mono uppercase tracking-wider">
+                                                {formatTime(parseTimestamp(summary.timestamp))}
+                                            </span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <button
