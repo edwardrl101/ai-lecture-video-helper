@@ -1,11 +1,13 @@
-import express, { Request, Response, Application } from 'express';
+import express, { type Request, type Response, type Application } from 'express';
+import transcriptionRoutes from './routes/transcription.routes.js';
 
 const app: Application = express();
 const PORT = 3000;
 
-app.get('/', (req: Request, res: Response) => {
-    res.send('Hello from TypeScript + Express!');
-});
+app.use(express.json());
+
+app.use('/api/transcribe', transcriptionRoutes);
+
 
 app.listen(PORT, () => {
     console.log(`Server is running at http://localhost:${PORT}`);
