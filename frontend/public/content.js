@@ -107,4 +107,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; // Keep the message channel open for async response
 });
 
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "SEEK_VIDEO") {
+        const video = document.querySelector('video');
+
+        if (video) {
+            // Move the video to the specific second
+            video.currentTime = request.time;
+
+            // Optional: Auto-play if it was paused
+            video.play();
+
+            console.log(`[PanoptoHelper] Seeking to ${request.time}s`);
+            sendResponse({ status: "success" });
+        } else {
+            console.error("[PanoptoHelper] No video element found to seek.");
+            sendResponse({ status: "error", message: "Video not found" });
+        }
+    }
+});
+
 //

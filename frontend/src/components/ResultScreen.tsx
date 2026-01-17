@@ -4,6 +4,8 @@ import { Summary } from '@/utils/summary'
 
 
 import { TranscriptionSegment } from '@/utils/transcription'
+import { seekVideo, parseTimestamp, formatTime } from '@/utils/video'
+
 
 interface ResultScreenProps {
     summaries: Summary[]
@@ -17,11 +19,6 @@ interface ResultScreenProps {
 export function ResultScreen({ summaries, transcriptions, initialMode, onSelectTopic }: ResultScreenProps) {
     const [viewMode, setViewMode] = useState<'summary' | 'transcription'>(initialMode)
 
-    const formatTime = (seconds: number) => {
-        const mins = Math.floor(seconds / 60)
-        const secs = Math.floor(seconds % 60)
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-    }
 
 
     return (
@@ -55,9 +52,18 @@ export function ResultScreen({ summaries, transcriptions, initialMode, onSelectT
                                     className="group relative bg-card hover:bg-accent/30 border border-border p-5 rounded-2xl cursor-pointer transition-all duration-300 hover:shadow-lg active:scale-[0.98]"
                                 >
                                     <div className="flex items-start justify-between mb-3">
-                                        <div className="flex items-center gap-2 px-2.5 py-1 bg-primary/10 text-primary rounded-full">
+                                        <div
+                                            className="flex items-center gap-2 px-2.5 py-1 bg-primary/10 text-primary rounded-full hover:bg-primary/20 transition-colors cursor-pointer"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                seekVideo(parseTimestamp(summary.timestamp));
+                                            }}
+                                            title="Click to seek"
+                                        >
                                             <Clock className="w-3 h-3" />
-                                            <span className="text-[10px] font-bold font-mono uppercase tracking-wider">{summary.timestamp}</span>
+                                            <span className="text-[10px] font-bold font-mono uppercase tracking-wider">
+                                                {formatTime(parseTimestamp(summary.timestamp))}
+                                            </span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <button
@@ -95,7 +101,11 @@ export function ResultScreen({ summaries, transcriptions, initialMode, onSelectT
                             <div className="space-y-4">
                                 {transcriptions.map((segment, i) => (
                                     <div key={i} className="flex gap-4 p-3 rounded-xl hover:bg-accent/20 transition-colors">
-                                        <div className="shrink-0 text-[10px] font-bold font-mono text-primary bg-primary/10 px-2 py-1 h-fit rounded-md">
+                                        <div
+                                            className="shrink-0 text-[10px] font-bold font-mono text-primary bg-primary/10 px-2 py-1 h-fit rounded-md hover:bg-primary/20 transition-colors cursor-pointer"
+                                            onClick={() => seekVideo(segment.start)}
+                                            title="Click to seek"
+                                        >
                                             {formatTime(segment.start)}
                                         </div>
                                         <p className="text-sm text-foreground leading-relaxed">

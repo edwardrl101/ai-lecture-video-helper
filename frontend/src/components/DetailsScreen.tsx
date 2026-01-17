@@ -1,5 +1,6 @@
 import { ArrowLeft, Clock, Sparkles } from 'lucide-react'
 import { Summary } from '@/utils/summary'
+import { seekVideo, parseTimestamp, formatTime } from '@/utils/video'
 
 interface DetailsScreenProps {
     topic: Summary
@@ -20,9 +21,15 @@ export function DetailsScreen({ topic, onBack }: DetailsScreenProps) {
             </header>
 
             <div className="bg-primary/5 border border-primary/20 p-6 rounded-3xl space-y-4 shrink-0 relative">
-                <div className="flex items-center gap-2 px-3 py-1 bg-primary text-primary-foreground rounded-full w-fit">
+                <div
+                    className="flex items-center gap-2 px-3 py-1 bg-primary text-primary-foreground rounded-full w-fit hover:bg-primary/90 transition-colors cursor-pointer"
+                    onClick={() => seekVideo(parseTimestamp(topic.timestamp))}
+                    title="Click to seek"
+                >
                     <Clock className="w-3.5 h-3.5" />
-                    <span className="text-[10px] font-bold font-mono tracking-widest">{topic.timestamp}</span>
+                    <span className="text-[10px] font-bold font-mono tracking-widest">
+                        {formatTime(parseTimestamp(topic.timestamp))}
+                    </span>
                 </div>
                 <button
                     className="absolute top-6 right-6 p-2 bg-background border border-border rounded-xl text-muted-foreground hover:text-primary hover:border-primary/30 transition-all shadow-sm active:scale-95"
@@ -49,13 +56,19 @@ export function DetailsScreen({ topic, onBack }: DetailsScreenProps) {
                             <div
                                 key={i}
                                 className="flex items-center gap-4 p-4 bg-card border border-border rounded-2xl hover:border-primary/30 hover:bg-accent/20 transition-all cursor-pointer group"
+                                onClick={() => seekVideo(parseTimestamp(topic.timestamp))}
                             >
                                 <div className="flex flex-col items-center shrink-0">
                                     <div className="w-1.5 h-1.5 bg-primary rounded-full group-hover:scale-150 transition-transform"></div>
                                     {i !== topic.details.length - 1 && <div className="w-[1px] h-8 bg-border my-1"></div>}
                                 </div>
                                 <div className="flex-1 space-y-1">
-                                    <span className="text-[10px] font-bold font-mono text-primary/60">{topic.timestamp} (pt. {i + 1})</span>
+                                    <div
+                                        className="text-[10px] font-bold font-mono text-primary/60 hover:text-primary transition-colors inline-block"
+                                        title="Seek to start"
+                                    >
+                                        {formatTime(parseTimestamp(topic.timestamp))} (pt. {i + 1})
+                                    </div>
                                     <p className="text-sm font-semibold group-hover:text-foreground transition-colors">{detail}</p>
                                 </div>
                                 <button
@@ -76,3 +89,4 @@ export function DetailsScreen({ topic, onBack }: DetailsScreenProps) {
         </div>
     )
 }
+

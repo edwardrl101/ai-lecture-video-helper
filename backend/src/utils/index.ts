@@ -1,6 +1,6 @@
 import express, { type Request, type Response, type Application } from 'express';
 import cors from 'cors';
-import { generateLectureSummary } from '../services/groq.js';
+import { generateLectureSummary } from '../services/gemini.js';
 import transcriptionRoutes from '../routes/transcription.routes.js';
 
 const app: Application = express();
