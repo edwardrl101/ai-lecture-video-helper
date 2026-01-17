@@ -1,3 +1,4 @@
+docker
 # --- STAGE 1: Build ---
 FROM node:20-alpine AS builder
 WORKDIR /app
@@ -19,11 +20,12 @@ ENV NODE_ENV=production
 
 # Copy ONLY the production dependencies (ignores devDependencies like TypeScript)
 COPY package*.json ./
-RUN npm install --omit=dev
+RUN apk add --no-cache ffmpeg ca-certificates && \
+    npm install --omit=dev
 
 # Copy the compiled JS from the builder stage
 COPY --from=builder /app/dist ./dist
 
 # Start the app
 EXPOSE 3000
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/utils/index.js"]

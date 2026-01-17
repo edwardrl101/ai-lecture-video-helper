@@ -15,10 +15,13 @@ const TEMP_DIR = path.resolve(ROOT_DIR, 'temp_audio');
 const SOURCE_AUDIO = path.resolve(TEMP_DIR, 'source_audio.mp3');
 
 // Configure FFmpeg paths
-if (ffmpegStatic) {
+if (process.env.NODE_ENV === 'production') {
+    // In production (Docker), we prefer the system-installed ffmpeg
+    console.log("Using system ffmpeg in production");
+} else if (ffmpegStatic) {
     ffmpeg.setFfmpegPath(ffmpegStatic);
 } else {
-    throw new Error("FFmpeg binary path could not be resolved.");
+    console.warn("ffmpeg-static path could not be resolved, falling back to system ffmpeg.");
 }
 
 if (ffprobeStatic && ffprobeStatic.path) {
