@@ -38,7 +38,7 @@ const MOCK_SUMMARIES: Summary[] = [
     }
 ]
 
-export async function generateSummary(captions: Caption[], streamUrl: string, duration: number, options: { signal: AbortSignal }): Promise<Summary[]> {
+export async function generateSummary(captions: Caption[], streamUrl: string, duration: number, options: { signal: AbortSignal; additionalPrompt?: string }): Promise<Summary[]> {
     console.log(`Calling backend API with ${captions.length} captions, streamUrl: ${streamUrl ? 'Present' : 'None'}, duration: ${duration}s`)
 
     // Map frontend 'caption' field to backend 'text' field
@@ -55,7 +55,8 @@ export async function generateSummary(captions: Caption[], streamUrl: string, du
         body: JSON.stringify({
             captions: mappedCaptions,
             streamUrl: streamUrl,
-            duration: duration
+            duration: duration,
+            additionalPrompt: options.additionalPrompt
         }),
         signal: options.signal
     });

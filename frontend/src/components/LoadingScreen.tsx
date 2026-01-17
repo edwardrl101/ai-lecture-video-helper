@@ -13,11 +13,12 @@ interface LoadingScreenProps {
     captions: Caption[]
     streamUrl: string
     duration: number
+    additionalPrompt?: string
 }
 
 
 
-export function LoadingScreen({ isExtractingAudio, processMode, onSummaryGenerated, onTranscriptionGenerated, onSummaryGenerateFail, captions, streamUrl, duration }: LoadingScreenProps) {
+export function LoadingScreen({ isExtractingAudio, processMode, onSummaryGenerated, onTranscriptionGenerated, onSummaryGenerateFail, captions, streamUrl, duration, additionalPrompt }: LoadingScreenProps) {
     const [step, setStep] = useState(0)
     const containerRef = useRef<HTMLDivElement>(null)
     const activeStepRef = useRef<HTMLDivElement>(null)
@@ -76,7 +77,8 @@ export function LoadingScreen({ isExtractingAudio, processMode, onSummaryGenerat
                 if (processMode === 'summary') {
                     // Generate summary (backend may auto-transcribe if no captions)
                     summaries = await generateSummary(captions, streamUrl, duration, {
-                        signal: controller.signal
+                        signal: controller.signal,
+                        additionalPrompt: additionalPrompt
                     });
 
                     // Also populate transcription tab from captions

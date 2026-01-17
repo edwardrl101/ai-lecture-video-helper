@@ -25,6 +25,7 @@ function App() {
     const [transcriptions, setTranscriptions] = useState<TranscriptionSegment[]>([])
     const [processMode, setProcessMode] = useState<ProcessMode>('summary')
     const [videoId, setVideoId] = useState<string | null>(null)
+    const [additionalPrompt, setAdditionalPrompt] = useState<string | undefined>(undefined)
 
     // Initialize data and load saved state
     useEffect(() => {
@@ -95,6 +96,20 @@ function App() {
         initializeData();
     }, []);
 
+    // Effect to save state to storage when results change
+    useEffect(() => {
+        if (videoId && (summaries.length > 0 || transcriptions.length > 0)) {
+            console.log("💾 Saving state to storage for video:", videoId);
+            chrome.storage.local.set({
+                [videoId]: {
+                    summaries,
+                    transcriptions,
+                    processMode
+                }
+            });
+        }
+    }, [videoId, summaries, transcriptions, processMode]);
+
     const handleSelectTopic = (topic: Summary) => {
         setSelectedTopic(topic)
         setScreen('details')
@@ -105,12 +120,30 @@ function App() {
     }
 
     const handleStartSummary = async () => {
+        setAdditionalPrompt(undefined)
         setProcessMode('summary')
         setScreen('loading')
     }
 
     const handleStartTranscription = async () => {
+        setAdditionalPrompt(undefined)
         setProcessMode('transcription')
+        setScreen('loading')
+    }
+
+    const handleRedo = () => {
+        setScreen('initial')
+        setSummaries([])
+        setTranscriptions([])
+        setAdditionalPrompt(undefined)
+        if (videoId) {
+            chrome.storage.local.remove(videoId);
+        }
+    }
+
+    const handleRedoWithPrompt = (prompt: string) => {
+        setAdditionalPrompt(prompt)
+        setProcessMode('summary')
         setScreen('loading')
     }
 
@@ -122,39 +155,11 @@ function App() {
     const handleSummaryGenerated = (newSummaries: Summary[]) => {
         setSummaries(newSummaries)
         setScreen('results')
-
-        // Save to storage
-        if (videoId) {
-            chrome.storage.local.get(videoId).then(result => {
-                const existing = result[videoId] || {};
-                chrome.storage.local.set({
-                    [videoId]: {
-                        ...existing,
-                        summaries: newSummaries,
-                        processMode: 'summary'
-                    }
-                });
-            });
-        }
     }
 
     const handleTranscriptionGenerated = (segments: TranscriptionSegment[]) => {
         setTranscriptions(segments)
         setScreen('results')
-
-        // Save to storage
-        if (videoId) {
-            chrome.storage.local.get(videoId).then(result => {
-                const existing = result[videoId] || {};
-                chrome.storage.local.set({
-                    [videoId]: {
-                        ...existing,
-                        transcriptions: segments,
-                        processMode: 'transcription'
-                    }
-                });
-            });
-        }
     }
 
 
@@ -192,6 +197,7 @@ function App() {
                         captions={captions}
                         streamUrl={streamUrl}
                         duration={duration}
+                        additionalPrompt={additionalPrompt}
                     />
                 )}
 
@@ -203,6 +209,8 @@ function App() {
                         transcriptions={transcriptions}
                         initialMode={processMode}
                         onSelectTopic={handleSelectTopic}
+                        onRedo={handleRedo}
+                        onRedoWithPrompt={handleRedoWithPrompt}
                     />
                 )}
 
