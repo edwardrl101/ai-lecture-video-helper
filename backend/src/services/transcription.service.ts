@@ -17,29 +17,23 @@ if (ffmpegStatic) {
 } else {
     throw new Error("FFmpeg binary path could not be resolved.");
 }
-if (ffprobeStatic) {
+
+if (ffprobeStatic && ffprobeStatic.path) {
     ffmpeg.setFfprobePath(ffprobeStatic.path);
 } else {
-    throw new Error("FFprobe binary path could not be resolved.");
+    console.warn("ffprobe-static path could not be resolved, falling back to system ffprobe.");
 }
 
+
 export const createTranscriptionService = async (data: TranscriptionInput): Promise<any> => {
-    await convertToAudio(data.url, TEMP_OUTPUT_FILE);
+    await convertToAudio(data.duration, data.url, TEMP_OUTPUT_FILE);
     // const transcription = await transcribeAudio(TEMP);
     // return transcription;
     return [];
 };
-const convertToAudio = async (videoUrl: string, outputFileName: string) => {
-    const metadata: any = await new Promise((resolve, reject) => {
-        ffmpeg(videoUrl).ffprobe((err: any, data: any) => {
-            if (err) reject(err);
-            else resolve(data);
-        });
-    });
-
-    const totalDuration = metadata.format.duration;
-    console.log(`Video duration: ${totalDuration} seconds`);
-    await processInParallel(videoUrl, totalDuration, 900);
+const convertToAudio = async (duration: number, videoUrl: string, outputFileName: string) => {
+    console.log(`Video duration: ${duration} seconds`);
+    await processInParallel(videoUrl, duration, 900, outputFileName);
 }
 
 

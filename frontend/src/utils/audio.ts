@@ -1,7 +1,7 @@
 /**
  * Requests the stream URL from the content script.
  */
-export async function getStreamUrl(): Promise<string | null> {
+export async function getStreamUrl(): Promise<StreamUrl | null> {
     return new Promise((resolve) => {
         // @ts-ignore - chrome API is available in extension context
         if (typeof chrome === 'undefined' || !chrome.tabs) {
@@ -25,7 +25,7 @@ export async function getStreamUrl(): Promise<string | null> {
                     console.error("Runtime error:", chrome.runtime.lastError);
                     resolve(null);
                 } else if (response && response.success) {
-                    resolve(response.url);
+                    resolve({ url: response.url, duration: response.duration });
                 } else {
                     console.warn("Failed to get stream URL:", response?.error);
                     resolve(null);

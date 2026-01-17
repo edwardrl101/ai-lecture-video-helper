@@ -67,7 +67,7 @@ async function getStreamUrl() {
     try {
         const streamUrl = deliveryData?.Streams[0].StreamUrl;
         console.log(streamUrl)
-        return streamUrl;
+        return { url: streamUrl, duration: deliveryData.Duration };
     } catch (error) {
         console.error('Error fetching Stream URL:', error);
         throw error;
@@ -88,7 +88,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 case "getStreamUrl":
                     const streamUrl = await getStreamUrl();
                     if (streamUrl) {
-                        sendResponse({ success: true, url: streamUrl });
+                        sendResponse({ success: true, url: streamUrl.url, duration: streamUrl.duration });
                     } else {
                         sendResponse({ success: false, error: "Could not find stream URL" });
                     }
