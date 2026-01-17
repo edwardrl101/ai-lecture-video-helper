@@ -94,9 +94,9 @@ export function LoadingScreen({ isExtractingAudio, processMode, onSummaryGenerat
                         transcriptionSegments = convertCaptionsToSegments(captions);
 
                         // Also generate summary from captions
-                        summaries = await generateSummary(captions, streamUrl, duration, {
-                            signal: controller.signal
-                        });
+                        // summaries = await generateSummary(captions, streamUrl, duration, {
+                        //     signal: controller.signal
+                        // });
                     } else {
                         // No captions - transcribe and then summarize
                         console.log('🎤 No captions found, extracting audio...');
@@ -111,9 +111,9 @@ export function LoadingScreen({ isExtractingAudio, processMode, onSummaryGenerat
                             caption: seg.text,
                             time: String(seg.start)
                         }));
-                        summaries = await generateSummary(captionsFromTranscription, streamUrl, duration, {
-                            signal: controller.signal
-                        });
+                        // summaries = await generateSummary(captionsFromTranscription, streamUrl, duration, {
+                        //     signal: controller.signal
+                        // });
                     }
                 }
 
