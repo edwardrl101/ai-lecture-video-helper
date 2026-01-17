@@ -2,16 +2,22 @@ import { useState, useEffect, useRef } from 'react'
 import { Loader2, AudioLines, FileText, Sparkles, Wand2 } from 'lucide-react'
 import { generateSummary, Summary } from '@/utils/summary'
 import { Caption } from './InitialScreen'
+import { transcribeVideo, TranscriptionSegment } from '@/utils/transcription'
 
 interface LoadingScreenProps {
     isExtractingAudio: boolean
+    processMode: 'summary' | 'transcription'
     onSummaryGenerated: (summaries: Summary[]) => void
+    onTranscriptionGenerated: (segments: TranscriptionSegment[]) => void
     onSummaryGenerateFail: () => void
     captions: Caption[]
     streamUrl: string
+    duration: number
 }
 
-export function LoadingScreen({ isExtractingAudio, onSummaryGenerated, onSummaryGenerateFail, captions, streamUrl }: LoadingScreenProps) {
+
+
+export function LoadingScreen({ isExtractingAudio, processMode, onSummaryGenerated, onTranscriptionGenerated, onSummaryGenerateFail, captions, streamUrl, duration }: LoadingScreenProps) {
     const [step, setStep] = useState(0)
     const containerRef = useRef<HTMLDivElement>(null)
     const activeStepRef = useRef<HTMLDivElement>(null)
@@ -27,32 +33,37 @@ export function LoadingScreen({ isExtractingAudio, onSummaryGenerated, onSummary
         const controller = new AbortController();
         const timeoutId = setTimeout(() => {
             controller.abort(); // This triggers the catch block
-        }, 60000);
+        }, 600000);
 
-        const generateSummaries = async () => {
+        const processLecture = async () => {
             try {
-                // Pass the signal to your dummy function or fetch call
-                const resultingSummaries = await generateSummary(captions, streamUrl, {
-                    signal: controller.signal
-                });
-
-                // If we reach here, it succeeded before 6 seconds
-                clearTimeout(timeoutId);
-                onSummaryGenerated(resultingSummaries);
-
-            } catch (err: any) {
-                // Check if the error was caused by the timeout (abort)
-                if (err.name === 'AbortError') {
-                    console.error("Request timed out after 60 seconds");
+                if (processMode === 'summary') {
+                    const resultingSummaries = await generateSummary(captions, streamUrl, {
+                        signal: controller.signal
+                    });
+                    clearTimeout(timeoutId);
+                    onSummaryGenerated(resultingSummaries);
                 } else {
-                    console.error("Request failed for other reasons", err);
+                    const resultingSegments = await transcribeVideo(streamUrl, duration, {
+                        signal: controller.signal
+                    });
+                    clearTimeout(timeoutId);
+
+                    onTranscriptionGenerated(resultingSegments);
                 }
 
+            } catch (err: any) {
+                if (err.name === 'AbortError') {
+                    console.error("Request timed out after 600 seconds");
+                } else {
+                    console.error("Process failed", err);
+                }
                 onSummaryGenerateFail();
             }
         };
-        console.log('generating summaries...')
-        generateSummaries();
+        console.log(`🚀 Starting ${processMode} process...`)
+        processLecture();
+
 
         // 3. Cleanup: Stop everything if user leaves the page
         return () => {

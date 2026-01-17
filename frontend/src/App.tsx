@@ -7,8 +7,12 @@ import { Summary } from './utils/summary'
 import { getCaptions } from './utils/captions'
 import { getStreamUrl } from './utils/audio'
 import { ErrorScreen } from './components/ErrorScreen'
+import { TranscriptionSegment } from './utils/transcription'
+
 
 type Screen = 'initial' | 'loading' | 'results' | 'details' | 'error'
+type ProcessMode = 'summary' | 'transcription'
+
 
 function App() {
     const [screen, setScreen] = useState<Screen>('initial')
@@ -16,7 +20,12 @@ function App() {
     const [hasCaptions, setHasCaptions] = useState(false)
     const [captions, setCaptions] = useState<Caption[]>([])
     const [streamUrl, setStreamUrl] = useState<string>("")
+    const [duration, setDuration] = useState<number>(0)
     const [summaries, setSummaries] = useState<Summary[]>([])
+    const [transcriptions, setTranscriptions] = useState<TranscriptionSegment[]>([])
+    const [processMode, setProcessMode] = useState<ProcessMode>('summary')
+
+
 
     // Simulate caption detection from Panopto
     useEffect(() => {
@@ -43,11 +52,13 @@ function App() {
 
                 // 2. Handle Stream URL
                 if (url) {
-                    setStreamUrl(url); // Assuming you have a setStreamUrl state
-                    console.log("✅ Stream URL captured:", url);
+                    setStreamUrl(url.url);
+                    setDuration(url.duration);
+                    console.log("✅ Stream URL captured:", url.url);
                 } else {
                     console.log("ℹ️ No Stream URL found");
                 }
+
 
             } catch (err) {
                 console.error("❌ Initialization failed", err);
@@ -72,8 +83,15 @@ function App() {
     }
 
     const handleStartSummary = async () => {
+        setProcessMode('summary')
         setScreen('loading')
     }
+
+    const handleStartTranscription = async () => {
+        setProcessMode('transcription')
+        setScreen('loading')
+    }
+
 
     const handleSummaryGenerateFail = () => {
         setScreen('error')
@@ -83,6 +101,12 @@ function App() {
         setSummaries(summaries)
         setScreen('results')
     }
+
+    const handleTranscriptionGenerated = (segments: TranscriptionSegment[]) => {
+        setTranscriptions(segments)
+        setScreen('results')
+    }
+
 
     return (
         <div className="w-[450px] min-h-[600px] max-h-[650px] bg-background text-foreground flex flex-col p-6 shadow-2xl relative overflow-hidden border border-border/50">
@@ -103,26 +127,35 @@ function App() {
                     <InitialScreen
                         hasCaptions={hasCaptions}
                         onStartSummary={handleStartSummary}
+                        onStartTranscription={handleStartTranscription}
                     />
                 )}
 
+
                 {screen === 'loading' && (
                     <LoadingScreen
-                        isExtractingAudio={!hasCaptions}
+                        isExtractingAudio={!hasCaptions || processMode === 'transcription'}
+                        processMode={processMode}
                         onSummaryGenerated={handleSummaryGenerated}
+                        onTranscriptionGenerated={handleTranscriptionGenerated}
                         onSummaryGenerateFail={handleSummaryGenerateFail}
                         captions={captions}
                         streamUrl={streamUrl}
+                        duration={duration}
                     />
                 )}
+
+
 
                 {screen === 'results' && (
                     <ResultScreen
                         summaries={summaries}
+                        transcriptions={transcriptions}
+                        initialMode={processMode}
                         onSelectTopic={handleSelectTopic}
-                        onSelectRedo={handleStartSummary}
                     />
                 )}
+
 
                 {screen === 'details' && selectedTopic && (
                     <DetailsScreen

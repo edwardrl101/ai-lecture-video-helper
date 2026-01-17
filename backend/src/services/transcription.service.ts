@@ -1,17 +1,20 @@
-import type { Transcription, TranscriptionInput } from '../interfaces/transcription.interface.js';
+import type { TranscriptionInput } from '../interfaces/transcription.interface.js';
 import { transcribeAudio } from './openai.js';
 import { createRequire } from 'module';
+import path from 'path';
+import fs from 'fs';
+
 const require = createRequire(import.meta.url);
 const ffmpeg = require('fluent-ffmpeg');
 import ffmpegStatic from 'ffmpeg-static';
 import ffprobeStatic from 'ffprobe-static';
 
-// import { PassThrough } from 'stream';
-// Output file used for temporary audio storage
-const TEMP_OUTPUT_FILE = 'output.mp3';
-const TEMP_DIR = './temp_dir';
+// Absolute paths for robustness
+const ROOT_DIR = process.cwd();
+const TEMP_DIR = path.resolve(ROOT_DIR, 'temp_audio');
+const SOURCE_AUDIO = path.resolve(TEMP_DIR, 'source_audio.mp3');
 
-// Check if the path exists and tell fluent-ffmpeg where it is
+// Configure FFmpeg paths
 if (ffmpegStatic) {
     ffmpeg.setFfmpegPath(ffmpegStatic);
 } else {
@@ -24,55 +27,103 @@ if (ffprobeStatic && ffprobeStatic.path) {
     console.warn("ffprobe-static path could not be resolved, falling back to system ffprobe.");
 }
 
-
 export const createTranscriptionService = async (data: TranscriptionInput): Promise<any> => {
-    await convertToAudio(data.duration, data.url, TEMP_OUTPUT_FILE);
-    // const transcription = await transcribeAudio(TEMP);
-    // return transcription;
-    return [];
-};
-const convertToAudio = async (duration: number, videoUrl: string, outputFileName: string) => {
-    console.log(`Video duration: ${duration} seconds`);
-    await processInParallel(videoUrl, duration, 900, outputFileName);
-}
-
-
-async function processInParallel(videoUrl: string, totalDuration: number, segmentDuration: number, finalOutput: string) {
-    const tasks: Promise<string>[] = [];
-
-    // Step 1: Create separate conversion tasks for each segment
-    for (let start = 0; start < totalDuration; start += segmentDuration) {
-        tasks.push(new Promise((resolve, reject) => {
-            const outputName = `temp_part_${start}.opus`;
-            ffmpeg(videoUrl)
-                .setStartTime(start)
-                .setDuration(segmentDuration)
-                .noVideo()
-                .audioCodec('libopus')
-                .audioBitrate('32k')
-                .audioFrequency(16000)
-                .audioChannels(1)
-                .format('opus')
-                .on('end', () => resolve(outputName))
-                .on('error', reject)
-                .save(outputName);
-        }));
+    // 1. Ensure temp directory exists
+    if (!fs.existsSync(TEMP_DIR)) {
+        fs.mkdirSync(TEMP_DIR, { recursive: true });
     }
 
-    // Step 2: Run all conversions in parallel
-    const tempFiles = await Promise.all(tasks);
+    try {
+        console.log(`🚀 Starting Turbo Transcription for: ${data.url}`);
 
-    // Step 3: Combine all temp files into one final output
-    return new Promise<void>((resolve, reject) => {
-        const mergedCommand = ffmpeg();
-        tempFiles.forEach((file: string) => mergedCommand.input(file));
+        // 2. Optimized Audio Extraction (Turbo Mode)
+        // Convert to 16kHz Mono immediately. High-quality stereo is a waste.
+        await extractSourceAudio(data.url, SOURCE_AUDIO);
 
-        mergedCommand
-            .on('error', reject)
-            .on('end', () => {
-                console.log('Final audio combined!');
-                resolve();
-            })
-            .mergeToFile(finalOutput, TEMP_DIR);
+        const duration = data.duration;
+        const SEGMENT_DURATION = 600; // 10 minutes (600s)
+        const segmentFiles: { path: string; start: number }[] = [];
+
+        // 3. Sequential Slicing (Fast & Robust)
+        console.log("✂️ Slicing audio into segments...");
+        for (let start = 0; start < duration; start += SEGMENT_DURATION) {
+            const segmentPath = path.resolve(TEMP_DIR, `segment_${start}.mp3`);
+            await sliceAudio(SOURCE_AUDIO, start, SEGMENT_DURATION, segmentPath);
+            segmentFiles.push({ path: segmentPath, start });
+        }
+
+        // 4. Parallel Transcription (The "Fan-Out")
+        console.log(`🎙️ Sending ${segmentFiles.length} segments to Whisper in parallel...`);
+        const transcriptionPromises = segmentFiles.map(async (file) => {
+            const segments = await transcribeAudio(file.path);
+            // Offset timestamps
+            return segments.map((s: any) => ({
+                ...s,
+                start: s.start + file.start,
+                end: s.end + file.start
+            }));
+        });
+
+        const results = await Promise.allSettled(transcriptionPromises);
+
+        const allSegments: any[] = [];
+        results.forEach((result, index) => {
+            if (result.status === 'fulfilled') {
+                allSegments.push(...result.value);
+            } else {
+                console.error(`❌ Segment ${index} failed:`, result.reason);
+            }
+        });
+
+        // 5. Final Stitching & Cleanup
+        allSegments.sort((a, b) => a.start - b.start);
+
+        console.log("✅ Transcription complete!");
+        return allSegments;
+
+    } catch (error) {
+        console.error("Transcription service error:", error);
+        throw error;
+    } finally {
+        // Cleanup all temp files
+        cleanupDir(TEMP_DIR);
+    }
+};
+
+const extractSourceAudio = (url: string, outputPath: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        ffmpeg(url)
+            .noVideo()
+            .audioCodec('libmp3lame')
+            .audioBitrate('64k')
+            .audioFrequency(16000)
+            .audioChannels(1)
+            .on('start', (cmd: string) => console.log('FFmpeg Extraction Command:', cmd))
+            .on('error', (err: any) => reject(err))
+            .on('end', () => resolve())
+            .save(outputPath);
     });
-}
+};
+
+const sliceAudio = (inputPath: string, start: number, duration: number, outputPath: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        // Use -ss before -i for fast seeking, and -c copy for no re-encoding
+        ffmpeg()
+            .input(inputPath)
+            .setStartTime(start)
+            .setDuration(duration)
+            .outputOptions('-c copy') // Fast slicing without re-encoding
+            .on('error', (err: any) => reject(err))
+            .on('end', () => resolve())
+            .save(outputPath);
+    });
+};
+
+const cleanupDir = (dirPath: string) => {
+    if (fs.existsSync(dirPath)) {
+        const files = fs.readdirSync(dirPath);
+        for (const file of files) {
+            fs.unlinkSync(path.join(dirPath, file));
+        }
+    }
+};
