@@ -37,14 +37,14 @@ const convertToAudio = async (videoUrl: string, outputFileName: string) => {
         });
     });
 
-    const totalDuration = metadata.format.duration;
+    const totalDuration = metadata.format?.duration || 0;
     console.log(`Video duration: ${totalDuration} seconds`);
-    await processInParallel(videoUrl, totalDuration, 900);
+    await processInParallel(videoUrl, totalDuration, 900, outputFileName);
 }
 
 
-async function processInParallel(videoUrl: string, totalDuration: number, segmentDuration: number) {
-    const tasks = [];
+async function processInParallel(videoUrl: string, totalDuration: number, segmentDuration: number, finalOutput: string) {
+    const tasks: Promise<string>[] = [];
 
     // Step 1: Create separate conversion tasks for each segment
     for (let start = 0; start < totalDuration; start += segmentDuration) {
@@ -69,10 +69,16 @@ async function processInParallel(videoUrl: string, totalDuration: number, segmen
     const tempFiles = await Promise.all(tasks);
 
     // Step 3: Combine all temp files into one final output
-    const mergedCommand = ffmpeg();
-    tempFiles.forEach(file => mergedCommand.input(file));
+    return new Promise<void>((resolve, reject) => {
+        const mergedCommand = ffmpeg();
+        tempFiles.forEach((file: string) => mergedCommand.input(file));
 
-    mergedCommand
-        .on('end', () => console.log('Final audio combined!'))
-        .mergeToFile(TEMP_OUTPUT_FILE, TEMP_DIR);
+        mergedCommand
+            .on('error', reject)
+            .on('end', () => {
+                console.log('Final audio combined!');
+                resolve();
+            })
+            .mergeToFile(finalOutput, TEMP_DIR);
+    });
 }
