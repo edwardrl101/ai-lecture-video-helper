@@ -24,14 +24,41 @@ function App() {
     const [summaries, setSummaries] = useState<Summary[]>([])
     const [transcriptions, setTranscriptions] = useState<TranscriptionSegment[]>([])
     const [processMode, setProcessMode] = useState<ProcessMode>('summary')
+    const [videoId, setVideoId] = useState<string | null>(null)
 
-
-
-    // Simulate caption detection from Panopto
+    // Initialize data and load saved state
     useEffect(() => {
         const initializeData = async () => {
             try {
                 console.log("🔍 Checking Panopto data...");
+
+                // Get current tab to extract deliveryId
+                const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+                if (tab?.url) {
+                    const url = new URL(tab.url);
+                    const id = url.searchParams.get('id');
+                    if (id) {
+                        setVideoId(id);
+                        console.log("📍 Video ID detected:", id);
+
+                        // Load saved state from storage
+                        const result = await chrome.storage.local.get(id);
+                        if (result[id]) {
+                            const saved = result[id] as {
+                                summaries?: Summary[],
+                                transcriptions?: TranscriptionSegment[],
+                                processMode?: ProcessMode
+                            };
+                            console.log("💎 Found saved state for this video");
+                            setSummaries(saved.summaries || []);
+                            setTranscriptions(saved.transcriptions || []);
+                            setProcessMode(saved.processMode || 'summary');
+                            if ((saved.summaries && saved.summaries.length > 0) || (saved.transcriptions && saved.transcriptions.length > 0)) {
+                                setScreen('results');
+                            }
+                        }
+                    }
+                }
 
                 // Run both fetches in parallel for better performance
                 const [captionData, url] = await Promise.all([
@@ -43,7 +70,6 @@ function App() {
                 if (captionData && captionData.length > 0) {
                     setHasCaptions(true);
                     setCaptions(captionData);
-                    console.log(captionData)
                     console.log(`✅ Loaded ${captionData.length} captions`);
                 } else {
                     setHasCaptions(false);
@@ -69,10 +95,6 @@ function App() {
         initializeData();
     }, []);
 
-
-
-
-
     const handleSelectTopic = (topic: Summary) => {
         setSelectedTopic(topic)
         setScreen('details')
@@ -97,14 +119,42 @@ function App() {
         setScreen('error')
     }
 
-    const handleSummaryGenerated = (summaries: Summary[]) => {
-        setSummaries(summaries)
+    const handleSummaryGenerated = (newSummaries: Summary[]) => {
+        setSummaries(newSummaries)
         setScreen('results')
+
+        // Save to storage
+        if (videoId) {
+            chrome.storage.local.get(videoId).then(result => {
+                const existing = result[videoId] || {};
+                chrome.storage.local.set({
+                    [videoId]: {
+                        ...existing,
+                        summaries: newSummaries,
+                        processMode: 'summary'
+                    }
+                });
+            });
+        }
     }
 
     const handleTranscriptionGenerated = (segments: TranscriptionSegment[]) => {
         setTranscriptions(segments)
         setScreen('results')
+
+        // Save to storage
+        if (videoId) {
+            chrome.storage.local.get(videoId).then(result => {
+                const existing = result[videoId] || {};
+                chrome.storage.local.set({
+                    [videoId]: {
+                        ...existing,
+                        transcriptions: segments,
+                        processMode: 'transcription'
+                    }
+                });
+            });
+        }
     }
 
 
