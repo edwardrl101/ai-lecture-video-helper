@@ -1,9 +1,11 @@
 import express, { type Request, type Response, type Application } from 'express';
+import cors from 'cors';
 import { generateLectureSummary } from '../services/groq.js';
 
 const app: Application = express();
 const PORT = 3000;
 
+app.use(cors());
 app.use(express.json());
 
 app.get('/', (req: Request, res: Response) => {

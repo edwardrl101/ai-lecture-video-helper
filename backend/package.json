@@ -7,17 +7,19 @@
     "scripts": {
         "build": "tsc",
         "start": "node dist/server.js",
-        "dev": "tsx watch src/utils/index.ts"
+        "dev": "nodemon --exec tsx src/utils/index.ts"
     },
     "keywords": [],
     "author": "",
     "license": "ISC",
     "dependencies": {
+        "cors": "^2.8.5",
         "dotenv": "^17.2.3",
         "express": "^5.1.0",
         "groq-sdk": "^0.37.0"
     },
     "devDependencies": {
+        "@types/cors": "^2.8.19",
         "@types/express": "^5.0.5",
         "@types/node": "^24.10.1",
         "nodemon": "^3.1.11",
