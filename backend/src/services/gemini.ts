@@ -45,7 +45,7 @@ Respond ONLY with a JSON object following this strict schema:
   ]
 }`;
 
-export async function generateLectureSummary(captions: Caption[], additionalPrompt?: string): Promise<Summary[]> {
+export async function generateLectureSummary(captions: Caption[]): Promise<Summary[]> {
     if (!process.env.GEMINI_API_KEY) {
         throw new Error('GEMINI_API_KEY is not set in environment variables');
     }
@@ -66,10 +66,6 @@ export async function generateLectureSummary(captions: Caption[], additionalProm
     const transcript = captions.map(c => c.text).join(' ');
 
     let fullUserPrompt = `${SYSTEM_PROMPT}\n\nLecture Transcript:\n${transcript}`;
-
-    if (additionalPrompt) {
-        fullUserPrompt += `\n\nADDITIONAL INSTRUCTION FROM USER:\n${additionalPrompt}`;
-    }
 
     const result = await model.generateContent({
         contents: [

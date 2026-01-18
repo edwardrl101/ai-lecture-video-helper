@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { ChevronRight, Clock, BookOpen, Sparkles, AudioLines, FileDown, FileText, RotateCcw, ChevronDown, Send, X } from 'lucide-react'
+import { ChevronRight, Clock, BookOpen, Sparkles, AudioLines, FileDown, FileText, RotateCcw, ChevronDown } from 'lucide-react'
 import { Summary } from '@/utils/summary'
 import { TranscriptionSegment } from '@/utils/transcription'
 import { seekVideo, parseTimestamp, formatTime } from '@/utils/video'
@@ -12,14 +12,12 @@ interface ResultScreenProps {
     initialMode: 'summary' | 'transcription'
     onSelectTopic: (topic: Summary) => void
     onRedo: () => void
-    onRedoWithPrompt: (prompt: string) => void
+
 }
 
-export function ResultScreen({ summaries, transcriptions, initialMode, onSelectTopic, onRedo, onRedoWithPrompt }: ResultScreenProps) {
+export function ResultScreen({ summaries, transcriptions, initialMode, onSelectTopic, onRedo }: ResultScreenProps) {
     const [viewMode, setViewMode] = useState<'summary' | 'transcription'>(initialMode)
     const [isRedoDropdownOpen, setIsRedoDropdownOpen] = useState(false)
-    const [isPromptModalOpen, setIsPromptModalOpen] = useState(false)
-    const [customPrompt, setCustomPrompt] = useState('')
     const dropdownRef = useRef<HTMLDivElement>(null)
 
     // Close dropdown when clicking outside
@@ -158,16 +156,7 @@ export function ResultScreen({ summaries, transcriptions, initialMode, onSelectT
                                             <RotateCcw className="w-3.5 h-3.5 text-primary" />
                                             Back to Initial Screen
                                         </button>
-                                        <button
-                                            onClick={() => {
-                                                setIsPromptModalOpen(true)
-                                                setIsRedoDropdownOpen(false)
-                                            }}
-                                            className="w-full flex items-center gap-3 px-4 py-3 text-[11px] font-semibold hover:bg-accent transition-colors text-left border-t border-border"
-                                        >
-                                            <Sparkles className="w-3.5 h-3.5 text-primary" />
-                                            Redo with extra prompt
-                                        </button>
+
                                     </div>
                                 )}
                             </div>
@@ -273,61 +262,7 @@ export function ResultScreen({ summaries, transcriptions, initialMode, onSelectT
                 </div>
             </div>
 
-            {/* Redo with Extra Prompt Modal */}
-            {isPromptModalOpen && (
-                <div className="absolute inset-0 z-50 flex items-center justify-center p-6 bg-background/60 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="w-full bg-card border border-border rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
-                        <div className="p-6 space-y-4">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <div className="p-2 bg-primary/10 rounded-lg">
-                                        <Sparkles className="w-5 h-5 text-primary" />
-                                    </div>
-                                    <h3 className="font-bold text-lg">Extra AI Instructions</h3>
-                                </div>
-                                <button
-                                    onClick={() => setIsPromptModalOpen(false)}
-                                    className="p-2 hover:bg-muted rounded-full transition-colors"
-                                >
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
 
-                            <p className="text-sm text-muted-foreground">
-                                Add an extra instruction or focus area while generating the summaries.
-                            </p>
-
-                            <textarea
-                                value={customPrompt}
-                                onChange={(e) => setCustomPrompt(e.target.value)}
-                                placeholder="e.g., Focus more on the mathematical derivations..."
-                                className="w-full h-32 p-4 bg-accent/20 border border-border rounded-2xl resize-none text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-                                autoFocus
-                            />
-
-                            <div className="flex gap-3 pt-2">
-                                <button
-                                    onClick={() => setIsPromptModalOpen(false)}
-                                    className="flex-1 py-3 text-sm font-bold rounded-xl border border-border hover:bg-muted transition-all"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    disabled={!customPrompt.trim()}
-                                    onClick={() => {
-                                        onRedoWithPrompt(customPrompt)
-                                        setIsPromptModalOpen(false)
-                                    }}
-                                    className="flex-[2] py-3 bg-primary text-primary-foreground text-sm font-bold rounded-xl flex items-center justify-center gap-2 hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    <Send className="w-4 h-4" />
-                                    Regenerate Summary
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     )
 }

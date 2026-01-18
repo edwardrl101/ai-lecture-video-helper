@@ -23,7 +23,7 @@ app.use('/api/transcribe', transcriptionRoutes);
 app.post('/generate-summary', async (req: Request, res: Response) => {
     try {
         console.log("Called /generate-summary");
-        const { captions, streamUrl, duration, additionalPrompt } = req.body;
+        const { captions, streamUrl, duration } = req.body;
 
         let captionsToUse = captions;
 
@@ -59,11 +59,9 @@ app.post('/generate-summary', async (req: Request, res: Response) => {
         }
 
         console.log(`Generating summary from ${captionsToUse.length} captions...`);
-        if (additionalPrompt) {
-            console.log(`💡 Additional prompt: "${additionalPrompt}"`);
-        }
 
-        const summaries = await generateLectureSummary(captionsToUse, additionalPrompt);
+
+        const summaries = await generateLectureSummary(captionsToUse);
 
         console.log(`Generated ${summaries.length} topic summaries`);
         res.json(summaries);

@@ -25,7 +25,7 @@ function App() {
     const [transcriptions, setTranscriptions] = useState<TranscriptionSegment[]>([])
     const [processMode, setProcessMode] = useState<ProcessMode>('summary')
     const [videoId, setVideoId] = useState<string | null>(null)
-    const [additionalPrompt, setAdditionalPrompt] = useState<string | undefined>(undefined)
+
 
     // Initialize data and load saved state
     useEffect(() => {
@@ -120,13 +120,11 @@ function App() {
     }
 
     const handleStartSummary = async () => {
-        setAdditionalPrompt(undefined)
         setProcessMode('summary')
         setScreen('loading')
     }
 
     const handleStartTranscription = async () => {
-        setAdditionalPrompt(undefined)
         setProcessMode('transcription')
         setScreen('loading')
     }
@@ -135,17 +133,12 @@ function App() {
         setScreen('initial')
         setSummaries([])
         setTranscriptions([])
-        setAdditionalPrompt(undefined)
         if (videoId) {
             chrome.storage.local.remove(videoId);
         }
     }
 
-    const handleRedoWithPrompt = (prompt: string) => {
-        setAdditionalPrompt(prompt)
-        setProcessMode('summary')
-        setScreen('loading')
-    }
+
 
 
     const handleSummaryGenerateFail = () => {
@@ -197,7 +190,6 @@ function App() {
                         captions={captions}
                         streamUrl={streamUrl}
                         duration={duration}
-                        additionalPrompt={additionalPrompt}
                     />
                 )}
 
@@ -210,7 +202,6 @@ function App() {
                         initialMode={processMode}
                         onSelectTopic={handleSelectTopic}
                         onRedo={handleRedo}
-                        onRedoWithPrompt={handleRedoWithPrompt}
                     />
                 )}
 
