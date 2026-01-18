@@ -1,4 +1,5 @@
 import { Caption } from "@/components/InitialScreen";
+import { TranscriptionSegment } from "./transcription";
 
 const BACKEND_URL = 'http://localhost:3000'
 
@@ -38,7 +39,13 @@ const MOCK_SUMMARIES: Summary[] = [
     }
 ]
 
-export async function generateSummary(captions: Caption[], streamUrl: string, duration: number, options: { signal: AbortSignal }): Promise<Summary[]> {
+
+export interface GenerateSummaryResponse {
+    summaries: Summary[];
+    transcriptions?: TranscriptionSegment[];
+}
+
+export async function generateSummary(captions: Caption[], streamUrl: string, duration: number, options: { signal: AbortSignal }): Promise<GenerateSummaryResponse> {
     console.log(`Calling backend API with ${captions.length} captions, streamUrl: ${streamUrl ? 'Present' : 'None'}, duration: ${duration}s`)
 
     // Map frontend 'caption' field to backend 'text' field
@@ -71,7 +78,7 @@ export async function generateSummary(captions: Caption[], streamUrl: string, du
 export async function generateSummaryDummy(
     _: Caption[],
     options: { signal: AbortSignal }
-): Promise<Summary[]> {
+): Promise<GenerateSummaryResponse> {
     const { signal } = options;
 
     const isSlow = Math.random() < 0.1;
@@ -81,7 +88,7 @@ export async function generateSummaryDummy(
     return new Promise((resolve, reject) => {
         const timeoutId = setTimeout(() => {
             console.log('generated dummies')
-            resolve(MOCK_SUMMARIES);
+            resolve({ summaries: MOCK_SUMMARIES });
         }, delay);
 
         signal.addEventListener('abort', () => {

@@ -26,6 +26,7 @@ app.post('/generate-summary', async (req: Request, res: Response) => {
         const { captions, streamUrl, duration } = req.body;
 
         let captionsToUse = captions;
+        let generatedTranscriptions = null;
 
         // Check if we have captions to work with
         if (!captions || !Array.isArray(captions) || captions.length === 0) {
@@ -41,6 +42,7 @@ app.post('/generate-summary', async (req: Request, res: Response) => {
                     url: streamUrl,
                     duration: duration
                 });
+                generatedTranscriptions = transcriptionSegments;
 
                 console.log(`✅ Transcription complete: ${transcriptionSegments.length} segments`);
 
@@ -64,7 +66,11 @@ app.post('/generate-summary', async (req: Request, res: Response) => {
         const summaries = await generateLectureSummary(captionsToUse);
 
         console.log(`Generated ${summaries.length} topic summaries`);
-        res.json(summaries);
+
+        res.json({
+            summaries,
+            transcriptions: generatedTranscriptions
+        });
 
     } catch (error) {
         console.error('Error generating summary:', error);

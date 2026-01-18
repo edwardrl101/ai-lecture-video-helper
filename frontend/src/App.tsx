@@ -154,10 +154,13 @@ function App() {
             // We can reuse the generateSummary function from utils.
 
             const controller = new AbortController()
-            const result = await generateSummary(captions, streamUrl, duration, {
+            const { summaries: generatedSummaries, transcriptions: generatedTranscriptions } = await generateSummary(captions, streamUrl, duration, {
                 signal: controller.signal
             })
-            setSummaries(result)
+            setSummaries(generatedSummaries)
+            if (generatedTranscriptions && generatedTranscriptions.length > 0) {
+                setTranscriptions(generatedTranscriptions)
+            }
         } catch (error) {
             console.error("Failed to load summary lazily", error)
         } finally {

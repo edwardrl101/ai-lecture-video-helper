@@ -75,16 +75,21 @@ export function LoadingScreen({ isExtractingAudio, processMode, onSummaryGenerat
 
                 if (processMode === 'summary') {
                     // Generate summary (backend may auto-transcribe if no captions)
-                    summaries = await generateSummary(captions, streamUrl, duration, {
+                    // Generate summary (backend may auto-transcribe if no captions)
+                    const result = await generateSummary(captions, streamUrl, duration, {
                         signal: controller.signal
                     });
+                    summaries = result.summaries;
 
-                    // Also populate transcription tab from captions
-                    if (captions && captions.length > 0) {
+                    // Capture auto-generated transcriptions if available
+                    if (result.transcriptions && result.transcriptions.length > 0) {
+                        transcriptionSegments = result.transcriptions;
+                    }
+
+                    // Also populate transcription tab from captions if we have them and no backend transcriptions
+                    if ((!transcriptionSegments || transcriptionSegments.length === 0) && captions && captions.length > 0) {
                         transcriptionSegments = convertCaptionsToSegments(captions);
                     }
-                    // Note: If no captions, backend already transcribed, but we don't have segments here
-                    // In this case, transcription tab will be empty - user can click transcribe if needed
 
                 } else {
                     // TRANSCRIPTION MODE
@@ -107,13 +112,14 @@ export function LoadingScreen({ isExtractingAudio, processMode, onSummaryGenerat
                         // Also generate summary from transcription
                         // Convert segments back to caption format for summary API
                         console.log('📊 Generating summary from transcription...');
-                        // const captionsFromTranscription = transcriptionSegments.map(seg => ({
-                        //     caption: seg.text,
-                        //     time: String(seg.start)
-                        // }));
-                        // summaries = await generateSummary(captionsFromTranscription, streamUrl, duration, {
-                        //     signal: controller.signal
-                        // });
+                        const captionsFromTranscription = transcriptionSegments.map(seg => ({
+                            caption: seg.text,
+                            time: String(seg.start)
+                        }));
+                        const result = await generateSummary(captionsFromTranscription, streamUrl, duration, {
+                            signal: controller.signal
+                        });
+                        summaries = result.summaries;
                     }
                 }
 

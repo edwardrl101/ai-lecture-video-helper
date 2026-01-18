@@ -4,7 +4,7 @@ export interface TranscriptionSegment {
     text: string;
 }
 
-const BACKEND_URL = 'http://3.27.193.101';
+const BACKEND_URL = 'http://localhost:3000';
 
 export async function transcribeVideo(url: string, duration: number, options?: { signal?: AbortSignal }): Promise<TranscriptionSegment[]> {
     console.log(`📡 Calling transcription API for: ${url} (${duration}s)`);
